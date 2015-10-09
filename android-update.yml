@@ -1,4 +1,4 @@
-sdk: /User/xxx/android-sdk
+#sdk: /User/xxx/android-sdk
 packages:
   - platform-tools
   - tools
