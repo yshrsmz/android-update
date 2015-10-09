@@ -33,3 +33,6 @@ packages:                           # packages to install(array)
 ```
 
 `ANDROID_HOME` environment variable is used to determine sdk directory.
+
+
+`docker run --rm -ti -v "$PWD":/usr/src/myapp -w /usr/src/myapp android-builder bash`

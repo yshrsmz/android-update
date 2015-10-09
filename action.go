@@ -88,7 +88,7 @@ func execInstall2(target string) {
 
 	p := pipe.Line(
 		pipe.Exec("echo", "y"),
-		pipe.Exec(androidExec, "update", "sdk", "-a", "-u", "-t", target),
+		pipe.Exec("/bin/sh", "-c", "sudo "+androidExec+" update sdk -a --force -u -t "+target),
 	)
 
 	output, err := pipe.CombinedOutput(p)
