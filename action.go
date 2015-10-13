@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -30,6 +31,11 @@ func doAction(c *cli.Context) {
 	_sdkPath = c.String("sdk")
 	if config.Sdk != "" {
 		_sdkPath = config.Sdk
+	}
+
+	if _sdkPath == "" {
+		log.Fatalln("SDK path is not configured")
+		return
 	}
 
 	fmt.Printf("sdk path is %v\n", _sdkPath)
@@ -79,12 +85,21 @@ func execInstall(target string) {
 }
 
 func execInstall2(target string) {
-	androidExec := "android"
+	androidExec := ""
+	androidToolsPath := ""
+	tempAndroidToolsPath := ""
 	if _sdkPath != "" {
-		androidExec = _sdkPath + "/tools/" + androidExec
+		androidToolsPath = _sdkPath + "/tools"
+		tempAndroidToolsPath = _sdkPath + "/tools_temp"
+
+		err := CopyDir(androidToolsPath, tempAndroidToolsPath)
+		if err != nil {
+			log.Fatalln(err)
+			return
+		}
 	}
-	androidExec, _ = filepath.Abs(androidExec)
-	fmt.Printf("command path: %v", androidExec)
+	androidExec, _ = filepath.Abs(tempAndroidToolsPath + "/android")
+	fmt.Printf("command path: %v\n", androidExec)
 
 	p := pipe.Line(
 		pipe.Exec("echo", "y"),
@@ -96,4 +111,7 @@ func execInstall2(target string) {
 		fmt.Printf("error: %v", err)
 	}
 	fmt.Println(string(output))
+
+	os.RemoveAll(_sdkPath + "/temp")
+	os.RemoveAll(tempAndroidToolsPath)
 }
