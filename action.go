@@ -42,7 +42,12 @@ func doAction(c *cli.Context) {
 	printTargets(config.Packages)
 
 	for i, len := 0, len(config.Packages); i < len; i++ {
-		execInstall2(config.Packages[i])
+		if config.Packages[i] == "tools" {
+			execInstallTools(config.Packages[i])
+		} else {
+			execInstall2(config.Packages[i])
+		}
+
 	}
 }
 
@@ -84,6 +89,12 @@ func execInstall(target string) {
 	fmt.Println(string(out))
 }
 
+func execKillAdb(sdkPath string) {
+	adbExec, _ := filepath.Abs(sdkPath + "/platform-tools/adb")
+	doKillAdb := exec.Command(adbExec, "kill-server")
+	doKillAdb.Run()
+}
+
 func execInstall2(target string) {
 	androidExec := ""
 	androidToolsPath := ""
@@ -101,9 +112,11 @@ func execInstall2(target string) {
 	androidExec, _ = filepath.Abs(tempAndroidToolsPath + "/android")
 	fmt.Printf("command path: %v\n", androidExec)
 
+	execKillAdb(_sdkPath)
+
 	p := pipe.Line(
 		pipe.Exec("echo", "y"),
-		pipe.Exec("/bin/sh", "-c", "sudo "+androidExec+" update sdk -a --force -u -t "+target),
+		pipe.Exec(androidExec, "update", "sdk", "-a", "--force", "-u", "-t", target),
 	)
 
 	output, err := pipe.CombinedOutput(p)
@@ -111,6 +124,49 @@ func execInstall2(target string) {
 		fmt.Printf("error: %v", err)
 	}
 	fmt.Println(string(output))
+
+	os.RemoveAll(_sdkPath + "/temp")
+	os.RemoveAll(tempAndroidToolsPath)
+}
+
+// install tools
+func execInstallTools(target string) {
+	androidExec := ""
+	androidToolsPath := ""
+	tempAndroidToolsPath := ""
+	if _sdkPath != "" {
+		androidToolsPath = _sdkPath + "/tools"
+		tempAndroidToolsPath = _sdkPath + "/tools_temp"
+
+		err := CopyDir(androidToolsPath, tempAndroidToolsPath)
+		if err != nil {
+			log.Fatalln(err)
+			return
+		}
+	}
+	androidExec, _ = filepath.Abs(tempAndroidToolsPath + "/android")
+	fmt.Printf("command path: %v\n", androidExec)
+
+	execKillAdb(_sdkPath)
+
+	p := pipe.Line(
+		pipe.Exec("echo", "y"),
+		pipe.Exec(androidExec, "update", "sdk", "-a", "--force", "-u", "-t", target),
+	)
+
+	output, err := pipe.CombinedOutput(p)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+
+	}
+	fmt.Println(string(output))
+
+	files, _ := filepath.Glob(_sdkPath + "/temp" + "/tools_r*-linux.zip")
+	if files != nil {
+		fmt.Printf("tools installation seems like failed, so try to install manually\nfile: %v\n", files[0])
+		os.RemoveAll(androidToolsPath)
+		unzip(files[0], _sdkPath)
+	}
 
 	os.RemoveAll(_sdkPath + "/temp")
 	os.RemoveAll(tempAndroidToolsPath)
