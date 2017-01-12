@@ -4,6 +4,11 @@ Android Update
 Cli tool for installing Android SDKs, written in golang.
 
 
+# DEPRECATED!
+
+use [sdkmanager](https://developer.android.com/studio/command-line/sdkmanager.html) instead.
+
+
 # how to
 
 Execute command.
